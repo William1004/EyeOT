@@ -145,7 +145,9 @@ At the left side of the screen click Product->Messenger->Settings->Token Generat
 
 
 
-#FURTHER ENHANCEMENTS TO THIS DOCUMENT WILL BE UPDATED
+
+
+# Further updates to be expected
 
 
 
