@@ -1,6 +1,7 @@
 # EyeOT
 
-A Secuity Camera on a doorlock which can be operated using messenger.
+A Secuity Camera on a doorlock which can be operated using messenger.</br>
+Link to Youtube video : [NCU MIS IOT Project -EyeOT](https://youtu.be/chnJVtd9RYY)
 
 
 ## Ingredients
@@ -27,7 +28,8 @@ It handles the http requests sent to the pi.
 
 Installation refer to [ngrok Download](https://gist.github.com/jwebcat/ecaac7bc7ee26e01cd4a)
 
-##Steps
+## Making the Camera
+
 ### Step 1-Testing the camera
 Enter your OpenCV environment
 ```
@@ -168,7 +170,38 @@ messages, messaging_postbacks, message_deliveries, messaging_pre_checkouts boxes
 
 In the verify token line, type in the VERIFY_TOKEN in your code. For instance in the code above, it is TESTINGTOKEN.
 
+For a very detailed step-by-step guide for this step, refer to [Building Facebook Messenger Bots with Python in less than 60 minutes](https://www.twilio.com/blog/2017/12/facebook-messenger-bot-python.html)
 
+### Step 3-Making the Security Camera+Everything
+This step can be divided into 3 sub-steps. As for step 1 and 2, I used the code from [Marcelo](https://github.com/Mjrovai/OpenCV-Face-Recognition) for substep 1 ane 2, which are used to train face-recognition models. I'll give a brief description of what's going on in it. If you wish for a detailed tutorial refer to the link.
+
+#### SubStep 1-Collect Data
+This step collects data(Dataset) that is to be trained later on into a .yml file.
+```
+while(True):
+
+    ret, img = cam.read()
+    img = cv2.flip(img, -1) # flip video image vertically
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    faces = face_detector.detectMultiScale(gray, 1.3, 5)
+
+    for (x,y,w,h) in faces:
+
+        cv2.rectangle(img, (x,y), (x+w,y+h), (255,0,0), 2)     
+        count += 1
+
+        # Save the captured image into the datasets folder
+        cv2.imwrite("dataset/User." + str(face_id) + '.' + str(count) + ".jpg", gray[y:y+h,x:x+w])
+
+        cv2.imshow('image', img)
+
+    k = cv2.waitKey(100) & 0xff # Press 'ESC' for exiting video
+    if k == 27:
+        break
+    elif count >= 30: # Take 30 face sample and stop video
+         break
+```
+First the camera is activated to capture a picture, and it will find the face and save the part that has the face in the dataset directory. Once it has taken 30 pictures, this program will terminate.
 
 
 
