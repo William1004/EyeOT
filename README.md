@@ -4,7 +4,7 @@ A Secuity Camera on a doorlock which can be operated using messenger.
 
 
 ## Ingredients
-
+*Installations of libraries are recommended to be integrated to python3 using pip3
 ### A Clean Pi
 Installing a lot of stuff, some might not be able to be installed correctly if you don't have a clean Raspberry Pi. Installation of the latest version raspbian is mandatory. A full installation guide to installing a clean pi will be updated later on.
 
@@ -77,7 +77,7 @@ from pymessenger.bot import Bot
  
 app = Flask(__name__)
 ACCESS_TOKEN = 'ACCESS_TOKEN'
-VERIFY_TOKEN = 'VERIFY_TOKEN'
+VERIFY_TOKEN = 'TESTING_TOKEN'
 bot = Bot(ACCESS_TOKEN)
  
 #We will receive messages that Facebook sends our bot at this endpoint 
@@ -141,6 +141,32 @@ You will then be prompted to what kind of product you're building, click the “
 Go to your your app’s settings page on the left-hand side and fill out the Basic Information in the Settings tab. Simply ignore the Privacy Policy thing, we're only in developer mode.</br>
 
 At the left side of the screen click Product->Messenger->Settings->Token Generation. You will have to have a facebook page to enable this. This Access token will be put in the ACCESS_TOKEN part of the code.</br>
+
+Then go back to your app.py run it.
+```
+python3 app.py
+```
+You should get something that looks like the following:
+
+
+```
+Running on http://127.0.0.1:5000/ (Press CTRL C to quit)
+```
+You can see that it's running on port 5000.</br>
+
+Activate your ngrok on port 5000
+```
+ngrok http 5000
+```
+In the response, there should be something that looks like:
+```
+Forwarding:            https://d506a9d0.ngrok.io/ -> localhost:5000
+```
+Copy the url to your facebook developer page where there is an icon in the products menu which says webhook, and copy the url in it.
+Check the following:</br>
+messages, messaging_postbacks, message_deliveries, messaging_pre_checkouts boxes</br>
+
+In the verify token line, type in the VERIFY_TOKEN in your code. For instance in the code above, it is TESTINGTOKEN.
 
 
 
