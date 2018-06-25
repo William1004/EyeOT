@@ -203,8 +203,134 @@ while(True):
 ```
 First the camera is activated to capture a picture, and it will find the face and save the part that has the face in the dataset directory. Once it has taken 30 pictures, this program will terminate.
 
+#### SubStep 2-Train Data
+This step trains the data into a .yml file, which is the model app.py will refer to when doing facial recognition.
+```
+# function to get the images and label data
+def getImagesAndLabels(path):
+
+    imagePaths = [os.path.join(path,f) for f in os.listdir(path)]     
+    faceSamples=[]
+    ids = []
+
+    for imagePath in imagePaths:
+
+        PIL_img = Image.open(imagePath).convert('L') # convert it to grayscale
+        img_numpy = np.array(PIL_img,'uint8')
+
+        id = int(os.path.split(imagePath)[-1].split(".")[1])
+        faces = detector.detectMultiScale(img_numpy)
+
+        for (x,y,w,h) in faces:
+            faceSamples.append(img_numpy[y:y+h,x:x+w])
+            ids.append(id)
+
+    return faceSamples,ids
+
+print ("\n [INFO] Training faces. It will take a few seconds. Wait ...")
+faces,ids = getImagesAndLabels(path)
+recognizer.train(faces, np.array(ids))
+
+# Save the model into trainer/trainer.yml
+recognizer.write('trainer/trainer.yml') # recognizer.save() worked on Mac, but not on Pi
+
+# Print the numer of faces trained and end program
+print("\n [INFO] {0} faces trained. Exiting Program".format(len(np.unique(ids))))
+```
+
+The essence of this program is in recognizer.train(faces, np.array(ids)), where the model is formed by matching ids to their corresponding faces.
+
+#### SubStep 3-Creating the Bot
+This step is the final step of making EyeOT. I'll divide the code into three segments, the MessengerBot, watch() function, and open() function.
+
+##### Segment 1-MessengerBot
+I built the messenger bot part on the messenger bot we had when we're testing if the messenger bot is working.
+```
+output = request.get_json()
+       for event in output['entry']:
+          messaging = event['messaging']
+          for message in messaging:
+            if message.get('message'):
+                #Facebook Messenger ID for user so we know where to send response back to
+                recipient_id = message['sender']['id']
+                str = message['message']['text']
+                segs = str.split()
+                if message['message'].get('text'):
+                    if segs[0] == 'Watch':
+                        watch(int(segs[1]),recipient_id)
+                    elif segs[0]=='Open':
+                        open(recipient_id)
+##                send_message(recipient_id, 'skip')
+                #if user sends us a GIF, photo,video, or any other non-text item
+                if message['message'].get('attachments'):
+                    response_sent_nontext = get_message()
+                    send_message(recipient_id, response_sent_nontext)
+    return "Message Processed"
+```
+The part I added is to get what message this bot has received into the code. For different messages, the bot will act responsively to the command given from the user. </br>
+If the user typed in "Watch 10", it means that the user wishes the camera to be looking for people for 10 seconds, and call the watch() function.</br>
+If the user typed in Open, the Pi will activate the stepmotor attached to it by calling the open() function.
+```
+recipient_id = message['sender']['id']
+                str = message['message']['text']
+                segs = str.split()
+                if message['message'].get('text'):
+                    if segs[0] == 'Watch':
+                        watch(int(segs[1]),recipient_id)
+                    elif segs[0]=='Open':
+                        open(recipient_id)
+```
+I stripped out the part where the if statement took place.
+
+##### Segment 2-Watch()
+After being asked to watch for 10 seconds, this function will be activated, and it has a parameter(timer) that holds a number which is how long the camera will be activated.</br>
+
+This function takes 2 parameter, one for how long this function is going to last, another is the recipient id for which the function will send a messenger message to.
+```
+def watch(timer,recipient_id):
+```
+
+This set the time for how long the loop for detecting faces will be executed.
+```
+timeout = time.time()+timer
+```
+The rest are facial recognition using te .yml file we built in the previous segment.</br>
+<br/>
+The ids we used in the first segment are referred to the names in this list. There are some other better implementation for this part, but we'll use a list for now.
+```
+names = ['None', 'William', 'Michelle']
+```
+Names of the id that's being recognized will be appended to the a list called name, and will be sent as a message back to the person who messaged this bot.
+```
+send_message(recipient_id,' '.join(name)+" is at your door")
+```
+##### Segment 2-Open()
+This segement defines the function for opening the door. The doorlock is replaced with a steppermotor in this project, which means that we have to import RPi.GPIO. RPi.GPIO might not be in your CV virtual environment at this moment, but you can install it with the following:
+
+```
+pip3 install RPi.GPIO
+```
+With that we can move on to controlling the stepper motor.</br>
+First thing we have to do is to understand how a stepper motor works and how to control it with a python script.
+Refer to this [video](https://www.youtube.com/watch?v=Dc16mKFA7Fo) before moving on to working with your stepper motor.
+
+Assuming you've fully comprehend everything in the video or understand how a stepper motor works, the following array should not be a problem for you.
+
+```
+seq=[[1,0,0,0],[1,1,0,0],[0,1,0,0],[0,1,1,0],[0,0,1,0],[0,0,1,1],[0,0,0,1],[1,0,0,1]]
+```
+This is the sequence which the circuits are to be activated.
+
+</br>
+
+Once the open() function is called, the axis will rotate clockwise for 90 degrees, and wait for a few seconds then rotate counter-clockwise for 90 degrees. After that's done, the Pi will send a message to the one who called it that the door has been closed to ensure that the locked has not remain unlocked.
+
+### Activating your EyeOT
+To activate this whole system, do what you did in when you were testing the bot. If everything is working you can the the Pi will be receiving and sending messages.
 
 
+## Final Words
+EyeOT is an easy-to-build IOT device. Though it still got some problems, and at times doesn't work as expected, I hope that in the near future, corrections can be made, and upgrades can be integrated.
 
 # Further updates to be expected
 
