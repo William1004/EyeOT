@@ -63,3 +63,85 @@ while(True):
 cap.release()
 cv2.destroyAllWindows()
 ```
+If everything works just fine skip to the next step. </br>If not and it gives Assertion Error, try this:
+```
+sudo modprobe bcm2835-v4l2
+```
+### Step 2-Setting up/Testingthe MessengerBot
+Start a flask app in that same directory name it app.py. And put the code in it.</br>
+```
+#Python libraries that we need to import for our bot
+import random
+from flask import Flask, request
+from pymessenger.bot import Bot
+ 
+app = Flask(__name__)
+ACCESS_TOKEN = 'ACCESS_TOKEN'
+VERIFY_TOKEN = 'VERIFY_TOKEN'
+bot = Bot(ACCESS_TOKEN)
+ 
+#We will receive messages that Facebook sends our bot at this endpoint 
+@app.route("/", methods=['GET', 'POST'])
+def receive_message():
+    if request.method == 'GET':
+        """Before allowing people to message your bot, Facebook has implemented a verify token
+        that confirms all requests that your bot receives came from Facebook.""" 
+        token_sent = request.args.get("hub.verify_token")
+        return verify_fb_token(token_sent)
+    #if the request was not get, it must be POST and we can just proceed with sending a message back to user
+    else:
+        # get whatever message a user sent the bot
+       output = request.get_json()
+       for event in output['entry']:
+          messaging = event['messaging']
+          for message in messaging:
+            if message.get('message'):
+                #Facebook Messenger ID for user so we know where to send response back to
+                recipient_id = message['sender']['id']
+                if message['message'].get('text'):
+                    response_sent_text = get_message()
+                    send_message(recipient_id, response_sent_text)
+                #if user sends us a GIF, photo,video, or any other non-text item
+                if message['message'].get('attachments'):
+                    response_sent_nontext = get_message()
+                    send_message(recipient_id, response_sent_nontext)
+    return "Message Processed"
+ 
+ 
+def verify_fb_token(token_sent):
+    #take token sent by facebook and verify it matches the verify token you sent
+    #if they match, allow the request, else return an error 
+    if token_sent == VERIFY_TOKEN:
+        return request.args.get("hub.challenge")
+    return 'Invalid verification token'
+ 
+ 
+#chooses a random message to send to the user
+def get_message():
+    sample_responses = ["You are stunning!", "We're proud of you.", "Keep on being you!", "We're greatful to know you :)"]
+    # return selected item to the user
+    return random.choice(sample_responses)
+ 
+#uses PyMessenger to send response to user
+def send_message(recipient_id, response):
+    #sends user the text message provided via input response parameter
+    bot.send_text_message(recipient_id, response)
+    return "success"
+ 
+if __name__ == "__main__":
+    app.run()
+
+```
+This app.py is supposed to echo whatever you typed in your messenger.</br>
+
+Next, you have to make your bot in facebook.
+Sign up for a facebook developer account, and sign in. After that, you'll see a MyApp icon in the top-right corner, click it and add a new App.</br>
+You will then be prompted to what kind of product you're building, click the “Set Up” button on the Messenger option.</br>
+
+Go to your your app’s settings page on the left-hand side and fill out the Basic Information in the Settings tab. Simply ignore the Privacy Policy thing, we're only in developer mode.</br>
+
+At the left side of the screen click Product->Messenger->Settings->Token Generation. You will have to have a facebook page to enable this. This Access token will be put in the ACCESS_TOKEN part of the code.</br>
+
+
+
+
